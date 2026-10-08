@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Switch to "postgresql" (or "mysql") for production; the schema is portable.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(EDITOR)
+  bio          String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  posts Post[]
+  media Media[]
+}
+
+model Post {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique
+  excerpt     String?
+  content     String // sanitized HTML produced by the editor
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime? // future date + PUBLISHED = scheduled
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  canonicalUrl    String?
+  noIndex         Boolean @default(false)
+
+  authorId        String
+  author          User      @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  categoryId      String?
+  category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  featuredImageId String?
+  featuredImage   Media?    @relation(fields: [featuredImageId], references: [id], onDelete: SetNull)
+  tags            Tag[]
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([updatedAt])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  posts       Post[]
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  posts     Post[]
+}
+
+model Media {
+  id           String   @id @default(cuid())
+  filename     String // original file name
+  path         String   @unique // storage path relative to UPLOAD_DIR
+  url          String // public URL (/uploads/...)
+  mimeType     String
+  size         Int
+  width        Int?
+  height       Int?
+  alt          String?
+  createdAt    DateTime @default(now())
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  posts        Post[]
+
+  @@index([createdAt])
+}
+
+// Cached Open Graph metadata for external links (link preview cards).
+model LinkPreview {
+  url         String   @id
+  title       String?
+  description String?
+  image       String?
+  siteName    String?
+  favicon     String?
+  ok          Boolean  @default(false)
+  fetchedAt   DateTime @default(now())
+}
