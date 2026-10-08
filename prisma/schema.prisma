@@ -2,9 +2,9 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Switch to "postgresql" (or "mysql") for production; the schema is portable.
+// PostgreSQL (Vercel / Prisma Postgres). DATABASE_URL must be a postgres:// connection string.
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

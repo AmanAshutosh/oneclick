@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { imageSize } from "image-size";
+import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { ApiError } from "@/lib/api";
@@ -72,7 +73,7 @@ export async function saveUpload(file: File, userId: string) {
 }
 
 export async function listMedia(opts: { page: number; pageSize: number; q?: string }) {
-  const where = opts.q ? { OR: [{ filename: { contains: opts.q } }, { alt: { contains: opts.q } }] } : {};
+  const where: Prisma.MediaWhereInput = opts.q ? { OR: [{ filename: { contains: opts.q, mode: "insensitive" } }, { alt: { contains: opts.q, mode: "insensitive" } }] } : {};
   const [total, items] = await db.$transaction([
     db.media.count({ where }),
     db.media.findMany({

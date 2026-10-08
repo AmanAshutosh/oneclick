@@ -53,7 +53,7 @@ export type PostFull = Prisma.PostGetPayload<{ select: typeof postFullSelect }>;
 
 export async function listPostsAdmin(q: PostListQuery) {
   const where: Prisma.PostWhereInput = {};
-  if (q.q) where.OR = [{ title: { contains: q.q } }, { excerpt: { contains: q.q } }, { slug: { contains: q.q } }];
+  if (q.q) where.OR = [{ title: { contains: q.q, mode: "insensitive" } }, { excerpt: { contains: q.q, mode: "insensitive" } }, { slug: { contains: q.q, mode: "insensitive" } }];
   if (q.status) where.status = q.status;
   if (q.categoryId) where.categoryId = q.categoryId === "none" ? null : q.categoryId;
   if (q.tag) where.tags = { some: { slug: q.tag } };
@@ -207,7 +207,7 @@ export async function listPublishedPosts(opts: {
   if (opts.categorySlug) where.category = { slug: opts.categorySlug };
   if (opts.tagSlug) where.tags = { some: { slug: opts.tagSlug } };
   if (opts.q) {
-    where.OR = [{ title: { contains: opts.q } }, { excerpt: { contains: opts.q } }, { content: { contains: opts.q } }];
+    where.OR = [{ title: { contains: opts.q, mode: "insensitive" } }, { excerpt: { contains: opts.q, mode: "insensitive" } }, { content: { contains: opts.q, mode: "insensitive" } }];
   }
   const [total, items] = await db.$transaction([
     db.post.count({ where }),
